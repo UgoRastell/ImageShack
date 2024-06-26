@@ -1,0 +1,47 @@
+﻿@page "/register"
+@using Models.ViewModel
+@using System.Text.Json
+@inject Services.ApiService ApiService
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
+@inject Blazored.Toast.Services.IToastService ToastService
+
+<EditForm Model="@userRegistrationModel" OnValidSubmit="@HandleValidSubmit">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div class="form-group">
+        <label for="email">Email</label>
+        <InputText id="email" type="email" class="form-control" @bind-Value="userRegistrationModel.Email" />
+    </div>
+
+    <div class="form-group">
+        <label for="password">Password</label>
+        <InputText id="password" type="password" class="form-control" @bind-Value="userRegistrationModel.Password" />
+    </div>
+
+
+    <button type="submit" class="btn btn-primary">Register</button>
+</EditForm>
+
+@code {
+    private UserRegistrationViewModel userRegistrationModel = new UserRegistrationViewModel();
+
+    private async Task HandleValidSubmit()
+    {
+
+        Console.WriteLine($"Registration Data: {JsonSerializer.Serialize(userRegistrationModel)}");
+        var response = await ApiService.RegisterUserAsync(userRegistrationModel);
+
+        if (response.IsSuccessStatusCode)
+        {
+            // Redirection to the login page after successful registration
+            Navigation.NavigateTo("/login");
+        }
+        else
+        {
+            var content = await response.Content.ReadAsStringAsync();
+            Console.WriteLine($"Registration failed: {content}");
+        }
+    }
+}
