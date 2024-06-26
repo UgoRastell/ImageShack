@@ -2,46 +2,65 @@
 @using Models.ViewModel
 @using System.Text.Json
 @inject Services.ApiService ApiService
-@inject NavigationManager Navigation
+@inject NavigationManager NavigationManager
 @inject IJSRuntime JSRuntime
 @inject Blazored.Toast.Services.IToastService ToastService
 
-<EditForm Model="@userRegistrationModel" OnValidSubmit="@HandleValidSubmit">
-    <DataAnnotationsValidator />
-    <ValidationSummary />
+<h3 class="text-center mt-5">Register</h3>
 
-    <div class="form-group">
-        <label for="email">Email</label>
-        <InputText id="email" type="email" class="form-control" @bind-Value="userRegistrationModel.Email" />
+<div class="container mt-3">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white text-center">
+                    <h4>Create an Account</h4>
+                </div>
+                <div class="card-body">
+                    <EditForm Model="@userRegistrationModel" OnValidSubmit="@HandleValidSubmit">
+                        <DataAnnotationsValidator />
+                        <ValidationSummary />
+
+                        <div class="mb-3">
+                            <label for="email" class="form-label">Email</label>
+                            <InputText id="email" type="email" class="form-control" @bind-Value="userRegistrationModel.Email" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="password" class="form-label">Password</label>
+                            <InputText id="password" type="password" class="form-control" @bind-Value="userRegistrationModel.Password" />
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary">Register</button>
+                        </div>
+                    </EditForm>
+                </div>
+                <div class="card-footer text-center">
+                    <small>Déja un compte ? <a href="/login" class="text-primary">Login here</a></small>
+                </div>
+            </div>
+        </div>
     </div>
-
-    <div class="form-group">
-        <label for="password">Password</label>
-        <InputText id="password" type="password" class="form-control" @bind-Value="userRegistrationModel.Password" />
-    </div>
-
-
-    <button type="submit" class="btn btn-primary">Register</button>
-</EditForm>
+</div>
 
 @code {
     private UserRegistrationViewModel userRegistrationModel = new UserRegistrationViewModel();
 
     private async Task HandleValidSubmit()
     {
-
         Console.WriteLine($"Registration Data: {JsonSerializer.Serialize(userRegistrationModel)}");
         var response = await ApiService.RegisterUserAsync(userRegistrationModel);
 
         if (response.IsSuccessStatusCode)
         {
-            // Redirection to the login page after successful registration
-            Navigation.NavigateTo("/login");
+            ToastService.ShowSuccess("Registration successful!");
+            NavigationManager.NavigateTo("/login");
         }
         else
         {
             var content = await response.Content.ReadAsStringAsync();
             Console.WriteLine($"Registration failed: {content}");
+            ToastService.ShowError($"Registration failed: {content}");
         }
     }
 }

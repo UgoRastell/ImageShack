@@ -48,14 +48,6 @@ namespace Services
             }
         }
 
-        public async Task<string> GetUserNameAsync()
-        {
-            var user = await GetUserAsync();
-            var nameClaim = user.FindFirst(ClaimTypes.Name);
-            Console.WriteLine($"User name: {nameClaim?.Value}");
-            return nameClaim?.Value;
-        }
-
         public async Task<string> GetUserEmailAsync()
         {
             var user = await GetUserAsync();
@@ -70,10 +62,20 @@ namespace Services
             return user.Identity.IsAuthenticated;
         }
 
-        public async Task<bool> IsUserInRoleAsync(string role)
+        public async Task LogoutAsync()
+        {
+            await _jsRuntime.InvokeVoidAsync("localStorage.removeItem", "authToken");
+        }
+
+        public async Task<Guid?> GetUserIdAsync()
         {
             var user = await GetUserAsync();
-            return user.Claims.Any(c => c.Type == ClaimTypes.Role && c.Value == role);
+            var userIdClaim = user.FindFirst(ClaimTypes.NameIdentifier);
+            if (userIdClaim != null && Guid.TryParse(userIdClaim.Value, out var userId))
+            {
+                return userId;
+            }
+            return null;
         }
     }
 }

@@ -1,4 +1,12 @@
 ﻿@inherits LayoutComponentBase
+@inject Services.AuthService AuthService
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JSRuntime
+@inject Blazored.Toast.Services.IToastService ToastService
+@inject Services.ApiService ApiService
+@using System.Security.Claims;
+@using Models;
+
 <div class="page">
     <div class="sidebar">
         <NavMenu />
@@ -6,7 +14,8 @@
 
     <main>
         <div class="top-row px-4">
-            <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
+            <a href="" @onclick="DeleteAccountAsync">Supprimer mon compte</a>
+            <a href="" @onclick="LogoutAsync">Deconnexion</a>
         </div>
 
         <article class="content px-4">
@@ -14,3 +23,38 @@
         </article>
     </main>
 </div>
+
+@code {
+    private async Task LogoutAsync()
+    {
+        await AuthService.LogoutAsync();
+        ToastService.ShowSuccess("Logout successful!");
+        NavigationManager.NavigateTo("/login", true);
+    }
+
+    private async Task DeleteAccountAsync()
+    {
+        var userId = await AuthService.GetUserIdAsync();
+
+        if (userId.HasValue)
+        {
+            var response = await ApiService.DeleteUserAsync(userId.Value);
+
+            if (response.IsSuccessStatusCode)
+            {
+                await AuthService.LogoutAsync();
+                ToastService.ShowSuccess("Account and associated images deleted successfully!");
+                NavigationManager.NavigateTo("/login", true);
+            }
+            else
+            {
+                var content = await response.Content.ReadAsStringAsync();
+                ToastService.ShowError($"Failed to delete account: {content}");
+            }
+        }
+        else
+        {
+            ToastService.ShowError("Failed to delete account: User ID not found.");
+        }
+    }
+}

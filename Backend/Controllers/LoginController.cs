@@ -100,5 +100,23 @@ namespace Backend.Controllers
 
             return Ok(new { Message = "User registered successfully", UserId = user.UserId });
         }
+
+        [HttpDelete("DeleteUser/{userId}")]
+        public async Task<IActionResult> DeleteUser(Guid userId)
+        {
+            var user = await _dbContext.Users
+                .Include(u => u.Images)
+                .FirstOrDefaultAsync(u => u.UserId == userId);
+
+            if (user == null)
+            {
+                return NotFound("User not found.");
+            }
+
+            _dbContext.Users.Remove(user);
+            await _dbContext.SaveChangesAsync();
+
+            return Ok(new { Message = "User and associated images deleted successfully" });
+        }
     }
 }

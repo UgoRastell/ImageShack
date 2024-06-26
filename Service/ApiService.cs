@@ -4,6 +4,7 @@ using System.Linq;
 using System.Net.Http.Json;
 using System.Text;
 using System.Threading.Tasks;
+using Models;
 using Models.ViewModel;
 
 namespace Services
@@ -32,6 +33,11 @@ namespace Services
         {
             var response = await _httpClient.PostAsJsonAsync("Login/register", userRegistration);
             return response;
+        }
+
+        public async Task<HttpResponseMessage> DeleteUserAsync(Guid userId)
+        {
+            return await _httpClient.DeleteAsync($"User/DeleteUser/{userId}");
         }
 
         private class LoginResult
