@@ -1,10 +1,7 @@
 ﻿using Microsoft.JSInterop;
 using System;
-using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
-using System.Linq;
 using System.Security.Claims;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace Services
@@ -37,6 +34,13 @@ namespace Services
             {
                 var handler = new JwtSecurityTokenHandler();
                 var jwtToken = handler.ReadJwtToken(token);
+                Console.WriteLine($"Token: {jwtToken}");
+
+                foreach (var claim in jwtToken.Claims)
+                {
+                    Console.WriteLine($"Claim Type: {claim.Type}, Claim Value: {claim.Value}");
+                }
+
                 var identity = new ClaimsIdentity(jwtToken.Claims, "jwt");
                 var user = new ClaimsPrincipal(identity);
                 return user;
@@ -51,7 +55,7 @@ namespace Services
         public async Task<string> GetUserEmailAsync()
         {
             var user = await GetUserAsync();
-            var emailClaim = user.FindFirst(ClaimTypes.Email);
+            var emailClaim = user.FindFirst("email");
             Console.WriteLine($"User email: {emailClaim?.Value}");
             return emailClaim?.Value;
         }

@@ -1,7 +1,29 @@
 ﻿@page "/"
 
+@inject Services.AuthService AuthService
+
 <PageTitle>Home</PageTitle>
 
 <h1>Hello, world!</h1>
 
-Welcome to your new app.
+<p>Welcome to your new app.</p>
+
+@if (string.IsNullOrEmpty(userEmail))
+{
+    <p>Loading email...</p>
+}
+else
+{
+    <p>Your email: @userEmail</p>
+}
+
+@code {
+    private string userEmail;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Console.WriteLine("Initializing Home component...");
+        userEmail = await AuthService.GetUserEmailAsync();
+        Console.WriteLine($"User email loaded: {userEmail}");
+    }
+}

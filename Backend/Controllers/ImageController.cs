@@ -5,6 +5,7 @@ using Backend.Data;
 using System;
 using System.IO;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
 
 namespace Backend.Controllers
 {
@@ -20,7 +21,7 @@ namespace Backend.Controllers
         }
 
         [HttpPost("UploadImage")]
-        public async Task<IActionResult> UploadImage([FromForm] IFormFile image, [FromForm] Guid userId, [FromForm] bool isPublic)
+        public async Task<IActionResult> UploadImage(IFormFile image, [FromForm] Guid userId, [FromForm] bool isPublic)
         {
             if (image == null || image.Length == 0)
             {
@@ -33,7 +34,10 @@ namespace Backend.Controllers
                 return NotFound("User not found.");
             }
 
-            var imagePath = Path.Combine("wwwroot/images", image.FileName);
+            var imagePath = Path.Combine("wwwroot", "images", image.FileName);
+
+            // Ensure the directory exists
+            Directory.CreateDirectory(Path.GetDirectoryName(imagePath));
 
             using (var stream = new FileStream(imagePath, FileMode.Create))
             {
