@@ -6,6 +6,7 @@ using System;
 using System.IO;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Hosting;
 
 namespace Backend.Controllers
 {
@@ -14,10 +15,13 @@ namespace Backend.Controllers
     public class ImageController : ControllerBase
     {
         private readonly DatabaseContext _dbContext;
+        private readonly IWebHostEnvironment _environment;
 
-        public ImageController(DatabaseContext dbContext)
+
+        public ImageController(DatabaseContext dbContext, IWebHostEnvironment environment)
         {
             _dbContext = dbContext;
+            _environment = environment;
         }
 
         [HttpPost("UploadImage")]
@@ -34,10 +38,11 @@ namespace Backend.Controllers
                 return NotFound("User not found.");
             }
 
-            var imagePath = Path.Combine("wwwroot", "images", image.FileName);
+            var imagesFolderPath = "C:/Users/ugora/source/repos/Backend/Frontend/wwwroot/images/";
+            var imagePath = Path.Combine(imagesFolderPath, image.FileName);
 
             // Ensure the directory exists
-            Directory.CreateDirectory(Path.GetDirectoryName(imagePath));
+            Directory.CreateDirectory(imagesFolderPath);
 
             using (var stream = new FileStream(imagePath, FileMode.Create))
             {
@@ -60,6 +65,29 @@ namespace Backend.Controllers
             await _dbContext.SaveChangesAsync();
 
             return Ok(new { Message = "Image uploaded successfully", ImageId = newImage.ImageId });
+        }
+
+        [HttpGet("GetPublicImages")]
+        public async Task<ActionResult<IEnumerable<Image>>> GetPublicImages()
+        {
+            var images = await _dbContext.Images
+                .Where(i => i.IsPublic && !i.IsDeleted)
+                .Include(i => i.User)
+                .ToListAsync();
+
+            var imageList = images.Select(i => new
+            {
+                i.ImageId,
+                i.FileName,
+                i.Url,
+                i.UploadDate,
+                i.IsPublic,
+                i.IsDeleted,
+                i.UserId,
+                i.User.Email
+            });
+
+            return Ok(imageList);
         }
     }
 }

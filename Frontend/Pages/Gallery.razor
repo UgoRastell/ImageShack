@@ -1,0 +1,56 @@
+﻿@page "/gallery"
+@using Models.ViewModel
+@inject Services.ApiService ApiService
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JSRuntime
+@inject Blazored.Toast.Services.IToastService ToastService
+
+<h3>Public Gallery</h3>
+
+@if (images == null)
+{
+    <p>Loading images...</p>
+}
+else if (images.Count == 0)
+{
+    <p>No public images available.</p>
+}
+else
+{
+    <div class="row">
+        @foreach (var image in images)
+        {
+            <div class="col-md-4 mb-4">
+                <div class="card">
+                    <img src="@image.Url" class="card-img-top" alt="@image.FileName" />
+                    <div class="card-body">
+                        <h5 class="card-title">@image.FileName</h5>
+                        <p class="card-text">Uploaded by: @image.Email</p>
+                        <p class="card-text"><small class="text-muted">Uploaded on: @image.UploadDate.ToShortDateString()</small></p>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+
+@code {
+    private List<ImageViewModel> images;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadImages();
+    }
+
+    private async Task LoadImages()
+    {
+        try
+        {
+            images = await ApiService.GetPublicImagesAsync();
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowError($"Error loading images: {ex.Message}");
+        }
+    }
+}

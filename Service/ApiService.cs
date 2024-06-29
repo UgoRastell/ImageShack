@@ -40,6 +40,11 @@ namespace Services
             return await _httpClient.DeleteAsync($"User/DeleteUser/{userId}");
         }
 
+        public async Task<List<ImageViewModel>> GetPublicImagesAsync()
+        {
+            return await _httpClient.GetFromJsonAsync<List<ImageViewModel>>("Image/GetPublicImages");
+        }
+
         private class LoginResult
         {
             public string Token { get; set; }
