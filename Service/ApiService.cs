@@ -37,13 +37,35 @@ namespace Services
 
         public async Task<HttpResponseMessage> DeleteUserAsync(Guid userId)
         {
-            return await _httpClient.DeleteAsync($"User/DeleteUser/{userId}");
+            return await _httpClient.DeleteAsync($"Login/DeleteUser/{userId}");
         }
+
 
         public async Task<List<ImageViewModel>> GetPublicImagesAsync()
         {
             return await _httpClient.GetFromJsonAsync<List<ImageViewModel>>("Image/GetPublicImages");
         }
+
+        public async Task<List<ImageViewModel>> GetUserImagesAsync(Guid userId)
+        {
+            return await _httpClient.GetFromJsonAsync<List<ImageViewModel>>($"Image/GetUserImages/{userId}");
+        }
+
+        public async Task<HttpResponseMessage> ToggleImageVisibilityAsync(Guid imageId)
+        {
+            return await _httpClient.PostAsync($"Image/ToggleImageVisibility/{imageId}", null);
+        }
+
+        public async Task<HttpResponseMessage> UploadImageAsync(MultipartFormDataContent content)
+        {
+            return await _httpClient.PostAsync("Image/UploadImage", content);
+        }
+
+        public async Task<HttpResponseMessage> DeleteImageAsync(Guid imageId)
+        {
+            return await _httpClient.DeleteAsync($"Image/DeleteImage/{imageId}");
+        }
+
 
         private class LoginResult
         {

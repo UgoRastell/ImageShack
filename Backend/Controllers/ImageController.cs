@@ -38,11 +38,11 @@ namespace Backend.Controllers
                 return NotFound("User not found.");
             }
 
-            var imagesFolderPath = "C:/Users/ugora/source/repos/Backend/Frontend/wwwroot/images/";
-            var imagePath = Path.Combine(imagesFolderPath, image.FileName);
-
-            // Ensure the directory exists
+            var imagesFolderPath = "C:\\Users\\ugora\\source\\repos\\UgoRastell\\ImageShack\\Frontend\\wwwroot\\images\\";
             Directory.CreateDirectory(imagesFolderPath);
+
+            var randomFileName = Guid.NewGuid().ToString() + Path.GetExtension(image.FileName);
+            var imagePath = Path.Combine(imagesFolderPath, randomFileName);
 
             using (var stream = new FileStream(imagePath, FileMode.Create))
             {
@@ -52,8 +52,8 @@ namespace Backend.Controllers
             var newImage = new Image
             {
                 ImageId = Guid.NewGuid(),
-                FileName = image.FileName,
-                Url = $"/images/{image.FileName}",
+                FileName = randomFileName,
+                Url = $"/images/{randomFileName}",
                 UploadDate = DateTime.UtcNow,
                 IsPublic = isPublic,
                 IsDeleted = false,
@@ -89,5 +89,73 @@ namespace Backend.Controllers
 
             return Ok(imageList);
         }
+
+        [HttpGet("GetUserImages/{userId}")]
+        public async Task<ActionResult<IEnumerable<object>>> GetUserImages(Guid userId)
+        {
+            var images = await _dbContext.Images
+                .Where(i => i.UserId == userId && !i.IsDeleted)
+                .Include(i => i.User)
+                .ToListAsync();
+
+            var imageList = images.Select(i => new
+            {
+                i.ImageId,
+                i.FileName,
+                i.Url,
+                i.UploadDate,
+                i.IsPublic,
+                i.IsDeleted,
+                i.UserId,
+                UserEmail = i.User.Email
+            });
+
+            return Ok(imageList);
+        }
+
+        [HttpPost("ToggleImageVisibility/{imageId}")]
+        public async Task<IActionResult> ToggleImageVisibility(Guid imageId)
+        {
+            var image = await _dbContext.Images.FirstOrDefaultAsync(i => i.ImageId == imageId);
+            if (image == null)
+            {
+                return NotFound("Image not found.");
+            }
+
+            image.IsPublic = !image.IsPublic;
+            await _dbContext.SaveChangesAsync();
+
+            return Ok(new { Message = "Image visibility toggled successfully", IsPublic = image.IsPublic });
+        }
+
+        [HttpDelete("DeleteUser/{userId}")]
+        public async Task<IActionResult> DeleteUser(Guid userId)
+        {
+            var user = await _dbContext.Users
+                .Include(u => u.Images)
+                .FirstOrDefaultAsync(u => u.UserId == userId);
+
+            if (user == null)
+            {
+                return NotFound("User not found.");
+            }
+
+            // Delete associated images from the file system
+            foreach (var image in user.Images)
+            {
+                var imagePath = Path.Combine("C:\\Users\\ugora\\source\\repos\\UgoRastell\\ImageShack\\Frontend\\wwwroot\\images\\", image.FileName);
+                if (System.IO.File.Exists(imagePath))
+                {
+                    System.IO.File.Delete(imagePath);
+                }
+            }
+
+            _dbContext.Users.Remove(user);
+            await _dbContext.SaveChangesAsync();
+
+            return Ok(new { Message = "User and associated images deleted successfully" });
+        }
+
     }
 }
+

@@ -1,0 +1,110 @@
+﻿@page "/usergallery/{userId:guid}"
+@using Models.ViewModel
+@inject Services.ApiService ApiService
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JSRuntime
+@inject Blazored.Toast.Services.IToastService ToastService
+
+<h3>User's Gallery</h3>
+
+@if (images == null)
+{
+    <p>Loading images...</p>
+}
+else if (images.Count == 0)
+{
+    <p>No images available for this user.</p>
+}
+else
+{
+    <div class="row">
+        @foreach (var image in images)
+        {
+            <div class="col-md-4 mb-4">
+                <div class="card">
+                    <img src="@image.Url" class="card-img-top" alt="@image.FileName" />
+                    <div class="card-body">
+                        <h5 class="card-title">@image.FileName</h5>
+                        <p class="card-text"><small class="text-muted">Uploaded on: @image.UploadDate.ToShortDateString()</small></p>
+                        <p class="card-text"><small class="text-muted">Visibility: @(image.IsPublic ? "Public" : "Private")</small></p>
+                        <button class="btn btn-primary" @onclick="() => ToggleVisibility(image.ImageId)">
+                            Toggle Visibility
+                        </button>
+                        <button class="btn btn-danger" @onclick="() => DeleteImage(image.ImageId)">
+                            Supprimer l'image
+                        </button>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+
+@code {
+    private List<ImageViewModel> images;
+    [Parameter] public Guid userId { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadUserImages();
+    }
+
+    private async Task LoadUserImages()
+    {
+        try
+        {
+            images = await ApiService.GetUserImagesAsync(userId);
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowError($"Error loading user images: {ex.Message}");
+        }
+    }
+
+    private async Task ToggleVisibility(Guid imageId)
+    {
+        try
+        {
+            var response = await ApiService.ToggleImageVisibilityAsync(imageId);
+            if (response.IsSuccessStatusCode)
+            {
+                var result = await response.Content.ReadFromJsonAsync<ImageViewModel>();
+                var image = images.FirstOrDefault(i => i.ImageId == imageId);
+                if (image != null)
+                {
+                    image.IsPublic = result.IsPublic;
+                }
+                ToastService.ShowSuccess("Image visibility updated successfully");
+            }
+            else
+            {
+                ToastService.ShowError("Error updating image visibility");
+            }
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowError($"Error updating image visibility: {ex.Message}");
+        }
+    }
+
+    private async Task DeleteImage(Guid imageId)
+    {
+        try
+        {
+            var response = await ApiService.DeleteImageAsync(imageId);
+            if (response.IsSuccessStatusCode)
+            {
+                images = images.Where(i => i.ImageId != imageId).ToList();
+                ToastService.ShowSuccess("Image deleted successfully");
+            }
+            else
+            {
+                ToastService.ShowError("Error deleting image");
+            }
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowError($"Error deleting image: {ex.Message}");
+        }
+    }
+}

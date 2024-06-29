@@ -1,0 +1,71 @@
+﻿@page "/uploadimage"
+@inject Services.ApiService ApiService
+@inject Blazored.Toast.Services.IToastService ToastService
+@inject NavigationManager NavigationManager
+@inject Services.AuthService AuthService
+@using Microsoft.AspNetCore.Components.Forms
+
+<h3>Upload Image</h3>
+
+<EditForm Model="uploadModel" OnValidSubmit="HandleValidSubmit">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div class="mb-3">
+        <label for="image" class="form-label">Select Image</label>
+        <InputFile id="image" OnChange="HandleImageChange" />
+    </div>
+    <div class="mb-3">
+        <label for="isPublic" class="form-label">Public</label>
+        <InputCheckbox id="isPublic" @bind-Value="uploadModel.IsPublic" />
+    </div>
+    <button type="submit" class="btn btn-primary">Upload</button>
+</EditForm>
+
+@code {
+    private UploadImageModel uploadModel = new UploadImageModel();
+    private IBrowserFile selectedImage;
+    private const long MaxFileSize = 2 * 1024 * 1024;
+
+    private async Task HandleImageChange(InputFileChangeEventArgs e)
+    {
+        selectedImage = e.File;
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        if (selectedImage == null)
+        {
+            ToastService.ShowError("Please select an image to upload.");
+            return;
+        }
+
+        var userId = await AuthService.GetUserIdAsync();
+        if (userId == null)
+        {
+            ToastService.ShowError("User not authenticated.");
+            return;
+        }
+
+        var content = new MultipartFormDataContent();
+        content.Add(new StreamContent(selectedImage.OpenReadStream(MaxFileSize)), "image", selectedImage.Name);
+        content.Add(new StringContent(userId.ToString()), "userId");
+        content.Add(new StringContent(uploadModel.IsPublic.ToString()), "isPublic");
+
+        var response = await ApiService.UploadImageAsync(content);
+        if (response.IsSuccessStatusCode)
+        {
+            ToastService.ShowSuccess("Image uploaded successfully.");
+            NavigationManager.NavigateTo("/usergalleryredirect");
+        }
+        else
+        {
+            ToastService.ShowError("Error uploading image.");
+        }
+    }
+
+    private class UploadImageModel
+    {
+        public bool IsPublic { get; set; }
+    }
+}

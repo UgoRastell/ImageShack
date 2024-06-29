@@ -74,7 +74,7 @@ namespace Services
         public async Task<Guid?> GetUserIdAsync()
         {
             var user = await GetUserAsync();
-            var userIdClaim = user.FindFirst(ClaimTypes.NameIdentifier);
+            var userIdClaim = user.FindFirst("UserId");
             if (userIdClaim != null && Guid.TryParse(userIdClaim.Value, out var userId))
             {
                 return userId;
