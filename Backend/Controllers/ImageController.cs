@@ -38,7 +38,7 @@ namespace Backend.Controllers
                 return NotFound("User not found.");
             }
 
-            var imagesFolderPath = "C:\\Users\\ugora\\source\\repos\\UgoRastell\\ImageShack\\Frontend\\wwwroot\\images\\";
+            var imagesFolderPath = "C:\\Users\\ugora\\source\\repos\\ImageShack\\Frontend\\wwwroot\\images\\";
             Directory.CreateDirectory(imagesFolderPath);
 
             var randomFileName = Guid.NewGuid().ToString() + Path.GetExtension(image.FileName);
@@ -128,6 +128,28 @@ namespace Backend.Controllers
             return Ok(new { Message = "Image visibility toggled successfully", IsPublic = image.IsPublic });
         }
 
+        [HttpDelete("DeleteImage/{imageId}")]
+        public async Task<IActionResult> DeleteImage(Guid imageId)
+        {
+            var image = await _dbContext.Images.FirstOrDefaultAsync(i => i.ImageId == imageId);
+
+            if (image == null)
+            {
+                return NotFound("Image not found.");
+            }
+
+            var imagePath = Path.Combine("C:\\Users\\ugora\\source\\repos\\ImageShack\\Frontend\\wwwroot\\images\\", image.FileName);
+            if (System.IO.File.Exists(imagePath))
+            {
+                System.IO.File.Delete(imagePath);
+            }
+
+            _dbContext.Images.Remove(image);
+            await _dbContext.SaveChangesAsync();
+
+            return Ok(new { Message = "User and associated images deleted successfully" });
+        }
+
         [HttpDelete("DeleteUser/{userId}")]
         public async Task<IActionResult> DeleteUser(Guid userId)
         {
@@ -143,7 +165,7 @@ namespace Backend.Controllers
             // Delete associated images from the file system
             foreach (var image in user.Images)
             {
-                var imagePath = Path.Combine("C:\\Users\\ugora\\source\\repos\\UgoRastell\\ImageShack\\Frontend\\wwwroot\\images\\", image.FileName);
+                var imagePath = Path.Combine("C:\\Users\\ugora\\source\\repos\\ImageShack\\Frontend\\wwwroot\\images\\", image.FileName);
                 if (System.IO.File.Exists(imagePath))
                 {
                     System.IO.File.Delete(imagePath);
@@ -157,5 +179,7 @@ namespace Backend.Controllers
         }
 
     }
+
 }
+
 
